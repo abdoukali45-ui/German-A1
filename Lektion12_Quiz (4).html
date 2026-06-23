@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Glücksrad-Quiz — Lektion 12</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: linear-gradient(180deg, #F7F9FC 0%, #EEF3F9 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 14px;
+  }
+  .wrap { width: 100%; max-width: 480px; }
+  .eyebrow { text-align:center; font-size:13px; color:#2E75B6; font-weight:700; letter-spacing:1px; }
+  h1 {
+    text-align: center; margin: 4px 0 2px; font-size: 26px; color: #1F4E79;
+    font-weight: 800; font-style: italic; transform: skewX(-2deg);
+  }
+  .subtitle { text-align:center; font-size:14px; color:#555; margin-bottom:20px; direction: rtl; }
+  .card {
+    background:#fff; border-radius:20px; padding:30px 24px; text-align:center;
+    box-shadow:0 8px 30px rgba(31,78,121,0.12);
+  }
+  .dots { display:flex; justify-content:center; gap:10px; margin-bottom:18px; }
+  .dot { width:12px; height:12px; border-radius:50%; background:#D8E1EC; border:2px solid transparent; transition:.3s; }
+  .dot.done { background: var(--c); }
+  .dot.active { border-color: var(--c); }
+
+  .big-emoji { font-size:54px; margin-bottom:6px; }
+  p.lead { color:#666; font-size:15px; line-height:1.7; margin: 14px 0 22px; direction: rtl; }
+  button.primary {
+    background:#1F4E79; color:#fff; border:none; border-radius:14px;
+    padding:14px 34px; font-size:17px; font-weight:700; cursor:pointer;
+    box-shadow:0 4px 14px rgba(31,78,121,0.3); transition: transform .15s;
+  }
+  button.primary:active { transform: scale(0.97); }
+  button.spin {
+    background:#0F7B6C; color:#fff; border:none; border-radius:14px;
+    padding:14px 34px; font-size:17px; font-weight:700; cursor:pointer;
+    box-shadow:0 4px 14px rgba(15,123,108,.35); margin-top:8px; transition: transform .15s;
+  }
+  button.spin:disabled { background:#A9BCCB; box-shadow:none; cursor:default; }
+  button.spin:active:not(:disabled) { transform: scale(0.97); }
+
+  .wheel-zone { position:relative; width:260px; height:260px; margin:0 auto 8px; }
+  .pointer {
+    position:absolute; top:-13px; left:50%; transform:translateX(-50%);
+    width:0; height:0; border-left:13px solid transparent; border-right:13px solid transparent;
+    border-top:20px solid #0F7B6C; z-index:10; filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));
+  }
+  svg#wheelSvg {
+    transition: transform 2.8s cubic-bezier(.17,.67,.1,1);
+    filter: drop-shadow(0 6px 18px rgba(31,78,121,.35));
+  }
+  .legend { display:flex; justify-content:center; gap:14px; margin:14px 0; flex-wrap:wrap; font-size:13px; color:#555; }
+  .legend span.sw { width:10px; height:10px; border-radius:50%; display:inline-block; margin-left:5px; }
+  .score-line { margin-top:14px; font-size:14px; color:#888; }
+  .score-line strong { color:#1F4E79; }
+
+  .quiz-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .pill { color:#fff; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; }
+  .qcount { font-size:13px; color:#888; }
+  h3.question { color:#1F4E79; font-size:18px; line-height:1.5; margin-bottom:18px; text-align:right; }
+  .opt {
+    display:block; width:100%; background:#F2F6FA; border:2px solid #E2E8F0; border-radius:12px;
+    padding:13px 16px; font-size:15px; color:#1F4E79; text-align:right; direction:rtl;
+    cursor:pointer; margin-bottom:10px; transition:.2s; font-family:inherit;
+  }
+  .opt.correct { background:#E6F4E8; border-color:#2E9E5B; color:#1B6B3A; font-weight:700; }
+  .opt.wrong { background:#FCEAEA; border-color:#D64545; color:#A52E2E; font-weight:700; }
+  .opt:disabled { cursor:default; }
+  .explain {
+    margin-top:14px; background:#F7F9FC; border-right:4px solid #2E75B6; border-radius:8px;
+    padding:12px 14px; font-size:14px; color:#444; line-height:1.6; text-align:right; display:none;
+  }
+  .streak-msg { margin-top:10px; font-size:13px; color:#0F7B6C; font-weight:700; text-align:center; display:none; }
+  button.next {
+    margin-top:16px; width:100%; background:#1F4E79; color:#fff; border:none; border-radius:12px;
+    padding:13px; font-size:15px; font-weight:700; cursor:pointer; display:none;
+  }
+
+  .result-emoji { font-size:58px; margin-bottom:2px; }
+  h2.result-title { color:#1F4E79; font-size:21px; margin-bottom:6px; }
+  .result-msg { font-size:15px; color:#666; margin-bottom:18px; direction:rtl; }
+  .score-box { background:#F7F9FC; border-radius:16px; padding:18px; margin-bottom:18px; }
+  .score-box .num { font-size:40px; font-weight:800; color:#1F4E79; }
+  .score-box .pct { font-size:14px; color:#888; margin-top:2px; }
+  .score-box .streak { margin-top:12px; font-size:13px; color:#666; }
+
+  .screen { display:none; }
+  .screen.active { display:block; }
+  footer { text-align:center; margin-top:18px; font-size:12px; color:#A0AAB8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">LEKTION 12</div>
+  <h1>Glücksrad-Quiz 🎡</h1>
+  <div class="subtitle">عجلة الحظ — Jahreszeiten · Feste · Reisen · Perfekt mit sein</div>
+
+  <div class="dots" id="dots" style="display:none;"></div>
+
+  <div class="screen active card" id="screen-start">
+    <div class="big-emoji">🎡</div>
+    <h2 style="color:#1F4E79;font-size:20px;margin-bottom:8px;">مرحباً بك في كويز الدرس 12!</h2>
+    <p class="lead">أدر عجلة الحظ لتختار فئة أسئلة، أجب بسرعة، واجمع أكبر عدد من النقاط.<br>4 فئات × 5 أسئلة = 20 سؤالاً بانتظارك!</p>
+    <button class="primary" onclick="goWheel()">ابدأ اللعب</button>
+  </div>
+
+  <div class="screen card" id="screen-wheel">
+    <div class="wheel-zone">
+      <div class="pointer"></div>
+      <svg id="wheelSvg" viewBox="0 0 200 200" width="260" height="260"></svg>
+    </div>
+    <div class="legend" id="legend"></div>
+    <button class="spin" id="spinBtn" onclick="spinWheel()">أدر العجلة!</button>
+    <div class="score-line">النقاط الحالية: <strong id="liveScore">0</strong> / <span id="liveTotal">0</span></div>
+  </div>
+
+  <div class="screen card" id="screen-quiz">
+    <div class="quiz-top">
+      <div class="pill" id="catPill"></div>
+      <div class="qcount" id="qCount"></div>
+    </div>
+    <h3 class="question" id="qText"></h3>
+    <div id="optsZone"></div>
+    <div class="explain" id="explainBox"></div>
+    <div class="streak-msg" id="streakMsg"></div>
+    <button class="next" id="nextBtn" onclick="nextQuestion()">السؤال التالي ←</button>
+  </div>
+
+  <div class="screen card" id="screen-result">
+    <div class="result-emoji" id="resultEmoji"></div>
+    <h2 class="result-title" id="resultTitle"></h2>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="score-box">
+      <div class="num" id="finalScore"></div>
+      <div class="pct" id="finalPct"></div>
+      <div class="streak">🔥 أفضل متتالية: <strong id="finalStreak"></strong></div>
+    </div>
+    <div id="grade-box" style="margin:14px 0;padding:16px;border-radius:14px;font-size:22px;font-weight:800;text-align:center;"></div>
+    <div id="share-score" style="background:#F2F6FA;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;color:#555;direction:rtl;display:none;">
+      <div style="font-weight:700;color:#1F4E79;margin-bottom:6px;">📋 نتيجتك للمشاركة مع الأستاذ:</div>
+      <div id="share-text" style="font-family:monospace;font-size:13px;background:#fff;padding:8px;border-radius:8px;direction:ltr;"></div>
+      <button onclick="copyScore()" style="margin-top:8px;width:100%;background:#1F4E79;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;">📋 انسخ النتيجة</button>
+      <div id="copy-done" style="text-align:center;color:#1B6B3A;font-size:13px;margin-top:6px;display:none;">✅ تم النسخ!</div>
+    </div>
+    <button class="primary" style="background:#0F7B6C;box-shadow:0 4px 14px rgba(15,123,108,.3);" onclick="restart()">العب مرة أخرى 🎡</button>
+  </div>
+
+  <footer>Momente A1 · Lektion 12 — Im Frühling bin ich nach Hamburg gefahren.</footer>
+</div>
+
+<script>
+const CATEGORIES = [
+  { id:"jahreszeiten", label:"Jahreszeiten", color:"#1F4E79", emoji:"🍂" },
+  { id:"feste", label:"Feste", color:"#2E75B6", emoji:"🎪" },
+  { id:"reisen", label:"Reisen", color:"#0F7B6C", emoji:"✈️" },
+  { id:"perfekt", label:"Perfekt+sein", color:"#B45309", emoji:"⏳" },
+];
+
+const QUESTIONS = {
+  jahreszeiten: [
+    { q:"Welche Monate gehören zum „Frühling“?", options:["Dezember, Januar, Februar","Marz, April, Mai","Juni, Juli, August","September, Oktober, November"], correct:1, explain:"Frühling (الربيع) = März, April, Mai." },
+    { q:"„Im Winter“ — was bedeutet „im“ hier?", options:["بعد","قبل","في (الفصل/الشهر)","منذ"], correct:2, explain:"im + Jahreszeit/Monat = في. مثال: im Winter, im Dezember." },
+    { q:"Welche Jahreszeit kommt nach dem Sommer?", options:["Frühling","Winter","Herbst","Es gibt keine danach"], correct:2, explain:"ترتيب الفصول: Frühling → Sommer → Herbst → Winter." },
+    { q:"Zu welcher Jahreszeit gehört „der August“?", options:["Frühling","Sommer","Herbst","Winter"], correct:1, explain:"Sommer (الصيف) = Juni, Juli, August." },
+    { q:"Wie sagt man „في الخريف“ auf Deutsch?", options:["im Frühling","im Sommer","im Herbst","im Winter"], correct:2, explain:"Herbst = الخريف (September, Oktober, November)." },
+  ],
+  feste: [
+    { q:"Wann ist Weihnachten?", options:["1. Januar","31. Dezember","25. Dezember","Marz/April"], correct:2, explain:"Weihnachten = عيد الميلاد، في 25 ديسمبر دائماً." },
+    { q:"Was ist „das Oktoberfest“?", options:["مهرجان موسيقي في برلين","مهرجان شهير في ميونخ (سبتمبر/أكتوبر)","عيد رسمي ألماني","سوق الكريسماس"], correct:1, explain:"das Oktoberfest = مهرجان ميونخ الشهير، يبدأ في سبتمبر وينتهي في أكتوبر." },
+    { q:"„Seit wann gibt es das Fest?“ — die Antwort beginnt mit:", options:["Im...", "Seit...", "Am...", "Vor..."], correct:1, explain:"Seit + سنة = منذ. مثال: Seit 1977 gibt es das Fest." },
+    { q:"Was ist „der Hamburger Hafengeburtstag“?", options:["عيد ميلاد شخص في هامبورغ","مهرجان ميناء هامبورغ السنوي","عطلة رسمية في ألمانيا","اسم سفينة"], correct:1, explain:"der Hamburger Hafengeburtstag = مهرجان عيد ميلاد ميناء هامبورغ، يُقام كل عام في مايو." },
+    { q:"„Wie viele Besucher gibt es?“ — passende Antwort:", options:["Es dauert drei Tage.","Es hat etwa eine Million Besucher.","Es ist im Mai.","Seit 1977."], correct:1, explain:"للسؤال عن عدد الزوار نجيب بعدد: Es hat etwa eine Million Besucher." },
+  ],
+  reisen: [
+    { q:"„Wohin bist du gefahren?“ — richtige Antwort-Struktur:", options:["Ich fahre nach Hamburg.","Ich bin nach Hamburg gefahren.","Ich habe nach Hamburg gefahren.","Ich war nach Hamburg."], correct:1, explain:"fahren يأخذ Perfekt mit sein: Ich bin gefahren (ليس habe)." },
+    { q:"Was bedeutet „der Hafen“?", options:["الجسر","الميناء","المطار","المحطة"], correct:1, explain:"der Hafen (¨) = الميناء." },
+    { q:"„Ich bin in die Schweiz gefahren.“ — warum „in die“?", options:["Schweiz أداتها die (مؤنث)","خطأ نحوي","Schweiz بلا أداة","يجب nach die Schweiz"], correct:0, explain:"معظم البلدان بلا أداة (nach Deutschland)، لكن: die Schweiz, die Türkei, die USA تحتاج in die." },
+    { q:"„Hattest du Glück mit dem Wetter?“ — bedeutet auf Arabisch:", options:["هل كان الجو سيئاً؟","هل كان الحظ معك بخصوص الطقس؟","هل أحببت الطقس؟","هل تغيّر الطقس؟"], correct:1, explain:"Glück haben mit + Dativ = أن يحالفك الحظ بخصوص شيء." },
+    { q:"Welches Wort bedeutet „جولة الدراجة“?", options:["die Reise","die Tour","die Radtour","der Marathon"], correct:2, explain:"die Radtour = جولة بالدراجة الهوائية تحديداً." },
+  ],
+  perfekt: [
+    { q:"Welches Verb bildet Perfekt mit „sein“ (nicht haben)?", options:["essen","trinken","fahren","kaufen"], correct:2, explain:"أفعال الحركة (fahren, gehen, kommen) وتغيّر الحالة تأخذ sein، لا haben." },
+    { q:"„fahren“ im Perfekt:", options:["gefahrt","gefahren","gefahrte","fahrte"], correct:1, explain:"fahren → gefahren (فعل شاذ Partizip II)." },
+    { q:"„sein“ im Perfekt (Partizip II):", options:["gesein","gewesen","gewest","gesehen"], correct:1, explain:"sein → gewesen. مثال: Ich bin in Spanien gewesen. (= Ich war in Spanien.)" },
+    { q:"Welcher Satz ist RICHTIG?", options:["Das Wetter ist gewesen schön.","Das Wetter war schön.","Das Wetter hat gewesen schön.","Das Wetter bin gewesen schön."], correct:1, explain:"القاعدة المهمة: sein في الحالة الوصفية (الطقس، الحالة) يُفضَّل غالباً Präteritum: war، لا Perfekt." },
+    { q:"„Ich bin Marathon gelaufen.“ — warum „bin“ und nicht „habe“?", options:["لأن Marathon اسم مؤنث","لأن laufen فعل حركة يأخذ sein","خطأ نحوي، يجب habe","لأنه فعل ماضٍ بعيد"], correct:1, explain:"laufen (يجري/يمشي) فعل حركة، فيأخذ sein في الـ Perfekt: bin gelaufen." },
+  ],
+};
+
+let rotation = 0, spinning = false, activeCategory = null, qIndex = 0, selected = null;
+let score = 0, totalAnswered = 0, completedCategories = [], streak = 0, bestStreak = 0;
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function buildWheel(){
+  const svg = document.getElementById('wheelSvg');
+  const n = CATEGORIES.length, seg = 360/n, r = 96, cx=100, cy=100;
+  let html = '';
+  CATEGORIES.forEach((cat,i)=>{
+    const start = i*seg, end = start+seg;
+    const x1 = cx + r*Math.cos(Math.PI*(start-90)/180);
+    const y1 = cy + r*Math.sin(Math.PI*(start-90)/180);
+    const x2 = cx + r*Math.cos(Math.PI*(end-90)/180);
+    const y2 = cy + r*Math.sin(Math.PI*(end-90)/180);
+    const mid = start + seg/2;
+    const lx = cx + (r*0.62)*Math.cos(Math.PI*(mid-90)/180);
+    const ly = cy + (r*0.62)*Math.sin(Math.PI*(mid-90)/180);
+    html += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z" fill="${cat.color}" stroke="#fff" stroke-width="2"/>`;
+    html += `<text x="${lx}" y="${ly}" fill="#fff" font-size="11" font-weight="700" text-anchor="middle" transform="rotate(${mid}, ${lx}, ${ly})" style="font-family:Arial,sans-serif">${cat.emoji}</text>`;
+  });
+  html += `<circle cx="100" cy="100" r="20" fill="#F7F9FC" stroke="#1F4E79" stroke-width="3"/>`;
+  svg.innerHTML = html;
+
+  document.getElementById('legend').innerHTML = CATEGORIES.map(c=>
+    `<span><span class="sw" style="background:${c.color};opacity:${completedCategories.includes(c.id)?0.35:1}"></span>${c.label} ${completedCategories.includes(c.id)?'✓':''}</span>`
+  ).join('');
+}
+
+function buildDots(){
+  document.getElementById('dots').innerHTML = CATEGORIES.map(c=>{
+    const done = completedCategories.includes(c.id);
+    const act = activeCategory===c.id;
+    return `<span class="dot ${done?'done':''} ${act?'active':''}" style="--c:${c.color}"></span>`;
+  }).join('');
+}
+
+function goWheel(){
+  document.getElementById('dots').style.display='flex';
+  buildDots();
+  buildWheel();
+  show('screen-wheel');
+}
+
+function spinWheel(){
+  if(spinning) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinBtn').textContent = '🎡 ...';
+
+  const remaining = CATEGORIES.filter(c=>!completedCategories.includes(c.id));
+  const pool = remaining.length>0 ? remaining : CATEGORIES;
+  const chosen = pool[Math.floor(Math.random()*pool.length)];
+  const idx = CATEGORIES.findIndex(c=>c.id===chosen.id);
+  const seg = 360/CATEGORIES.length;
+  const targetMid = idx*seg + seg/2;
+  const extraSpins = 4*360;
+  rotation = rotation - (rotation % 360) + extraSpins + (360 - targetMid);
+  document.getElementById('wheelSvg').style.transform = `rotate(${rotation}deg)`;
+
+  setTimeout(()=>{
+    spinning = false;
+    document.getElementById('spinBtn').disabled = false;
+    document.getElementById('spinBtn').textContent = 'أدر العجلة!';
+    activeCategory = chosen.id;
+    qIndex = 0;
+    selected = null;
+    loadQuestion();
+    show('screen-quiz');
+  }, 2900);
+}
+
+function loadQuestion(){
+  buildDots();
+  const cat = CATEGORIES.find(c=>c.id===activeCategory);
+  const q = QUESTIONS[activeCategory][qIndex];
+  document.getElementById('catPill').style.background = cat.color;
+  document.getElementById('catPill').textContent = `${cat.emoji} ${cat.label}`;
+  document.getElementById('qCount').textContent = `${qIndex+1} / ${QUESTIONS[activeCategory].length}`;
+  document.getElementById('qText').textContent = q.q;
+
+  const zone = document.getElementById('optsZone');
+  zone.innerHTML = '';
+  q.options.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = opt;
+    btn.onclick = ()=>answer(i);
+    zone.appendChild(btn);
+  });
+
+  document.getElementById('explainBox').style.display='none';
+  document.getElementById('streakMsg').style.display='none';
+  document.getElementById('nextBtn').style.display='none';
+  selected = null;
+}
+
+function answer(idx){
+  if(selected !== null) return;
+  selected = idx;
+  const q = QUESTIONS[activeCategory][qIndex];
+  const correct = q.correct === idx;
+  totalAnswered++;
+
+  const opts = document.querySelectorAll('.opt');
+  opts.forEach((btn,i)=>{
+    btn.disabled = true;
+    if(i === q.correct){ btn.classList.add('correct'); btn.textContent += ' ✓'; }
+    else if(i === idx){ btn.classList.add('wrong'); btn.textContent += ' ✗'; }
+  });
+
+  if(correct){
+    score++;
+    streak++;
+    bestStreak = Math.max(bestStreak, streak);
+    if(streak>=3){
+      const sm = document.getElementById('streakMsg');
+      sm.textContent = `🔥 متتالية ${streak} إجابات صحيحة!`;
+      sm.style.display='block';
+    }
+  } else {
+    streak = 0;
+  }
+
+  const eb = document.getElementById('explainBox');
+  eb.textContent = `💡 ${q.explain}`;
+  eb.style.display = 'block';
+
+  document.getElementById('nextBtn').style.display='block';
+  document.getElementById('nextBtn').textContent = (qIndex+1 < QUESTIONS[activeCategory].length) ? 'السؤال التالي ←' : 'إنهاء الفئة ←';
+
+  document.getElementById('liveScore').textContent = score;
+  document.getElementById('liveTotal').textContent = totalAnswered;
+}
+
+function nextQuestion(){
+  const qs = QUESTIONS[activeCategory];
+  if(qIndex+1 < qs.length){
+    qIndex++;
+    loadQuestion();
+  } else {
+    if(!completedCategories.includes(activeCategory)) completedCategories.push(activeCategory);
+    if(completedCategories.length >= CATEGORIES.length){
+      showResult();
+    } else {
+      goWheel();
+    }
+  }
+}
+
+function showResult(){
+  const totalQuestions = Object.values(QUESTIONS).reduce((a,q)=>a+q.length,0);
+  const pct = totalAnswered>0 ? Math.round((score/totalAnswered)*100) : 0;
+
+  document.getElementById('resultEmoji').textContent = pct>=80 ? '🏆' : pct>=50 ? '👍' : '💪';
+  document.getElementById('resultTitle').textContent = pct>=80 ? 'Ausgezeichnet!' : pct>=50 ? 'Gut gemacht!' : 'Weiter üben!';
+  document.getElementById('resultMsg').textContent = pct>=80
+    ? 'ممتاز جداً! أنت تتحكم بالفصول والمهرجانات والسفر بثقة.'
+    : pct>=50 ? 'أداء جيد! راجع التفسيرات أعلاه لتثبيت ما تبقى.'
+    : 'ابدأ من جديد وراجع المرجع — ستتحسن بسرعة!';
+  document.getElementById('finalScore').textContent = `${score} / ${totalQuestions}`;
+  document.getElementById('finalPct').textContent = `${pct}% صحيح`;
+  document.getElementById('finalStreak').textContent = bestStreak;
+
+  let grade, gradeColor, gradeBg;
+  if(pct >= 90)      { grade = 'ممتاز — Sehr gut  (A)'; gradeColor='#1B6B3A'; gradeBg='#E6F4E8'; }
+  else if(pct >= 75) { grade = 'جيد جداً — Gut  (B)'; gradeColor='#1F4E79'; gradeBg='#EEF3F9'; }
+  else if(pct >= 60) { grade = 'جيد — Befriedigend  (C)'; gradeColor='#B45309'; gradeBg='#FFF8EC'; }
+  else if(pct >= 50) { grade = 'مقبول — Ausreichend  (D)'; gradeColor='#7C5A00'; gradeBg='#FFFBEB'; }
+  else               { grade = 'راجع الدرس — Nicht bestanden  (F)'; gradeColor='#A52E2E'; gradeBg='#FCEAEA'; }
+
+  const gradeBox = document.getElementById('grade-box');
+  gradeBox.textContent = grade;
+  gradeBox.style.color = gradeColor;
+  gradeBox.style.background = gradeBg;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ar-DZ');
+  const shareText = `Lektion 12 Quiz | النتيجة: ${score}/${totalQuestions} (${pct}%) | التقدير: ${grade.split('—')[0].trim()} | التاريخ: ${dateStr}`;
+  document.getElementById('share-text').textContent = shareText;
+  document.getElementById('share-score').style.display = 'block';
+
+  document.getElementById('dots').style.display='none';
+  show('screen-result');
+}
+
+function copyScore() {
+  const text = document.getElementById('share-text').textContent;
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById('copy-done').style.display = 'block';
+      setTimeout(() => document.getElementById('copy-done').style.display='none', 2000);
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.getElementById('copy-done').style.display = 'block';
+    setTimeout(() => document.getElementById('copy-done').style.display='none', 2000);
+  }
+}
+
+function restart(){
+  rotation = 0; activeCategory = null; qIndex = 0; selected = null;
+  score = 0; totalAnswered = 0; completedCategories = []; streak = 0; bestStreak = 0;
+  document.getElementById('wheelSvg').style.transition = 'none';
+  document.getElementById('wheelSvg').style.transform = 'rotate(0deg)';
+  setTimeout(()=>{ document.getElementById('wheelSvg').style.transition = 'transform 2.8s cubic-bezier(.17,.67,.1,1)'; }, 50);
+  document.getElementById('liveScore').textContent = 0;
+  document.getElementById('liveTotal').textContent = 0;
+  document.getElementById('dots').style.display='none';
+  show('screen-start');
+}
+</script>
+</body>
+</html>
