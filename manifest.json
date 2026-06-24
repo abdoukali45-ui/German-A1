@@ -1,13 +1,13 @@
 {
-  "name": "Deutsch A1 — رحلتي في الألمانية",
-  "short_name": "Deutsch A1",
+  "name": "Elkali German A1",
+  "short_name": "Elkali A1",
   "description": "تطبيق تعليمي لمراجعة دروس Momente A1 بالألمانية مع كويزات وتمارين تفاعلية",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FBF7EE",
-  "theme_color": "#16365C",
+  "background_color": "#FAF7F0",
+  "theme_color": "#1A1A1A",
   "lang": "ar",
   "dir": "rtl",
   "icons": [
