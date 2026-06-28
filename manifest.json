@@ -1,6 +1,6 @@
 {
   "name": "Elkali German A1",
-  "short_name": "Elkali A1",
+  "short_name": "GermanA1",
   "description": "تطبيق تعليمي لمراجعة دروس Momente A1 بالألمانية مع كويزات وتمارين تفاعلية",
   "start_url": "./index.html",
   "scope": "./",
